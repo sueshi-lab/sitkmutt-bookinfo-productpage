@@ -1,20 +1,23 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  {{- if .Values.ingress.annotations }}
   annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-  name: bookinfo-dev-productpage
-  namespace: student23-bookinfo-dev
+    {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.productpage.namespace }}
 spec:
   rules:
-  - host: sitkmutt.bookinfo.dev.opsta.net
+  - host: {{ .Values.ingress.host }}
     http:
       paths:
-      - path: /student23/productpage(/|$)(.*)
+      - path: {{ .Values.ingress.path }}
         pathType: Prefix
         backend:
           service:
-            name: bookinfo-dev-productpage
+            name: {{ .Release.Name }}
             port:
-              number: 8083
+              number: {{ .Values.productpage.port }}

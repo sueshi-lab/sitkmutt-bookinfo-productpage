@@ -1,32 +1,47 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: bookinfo-dev-productpage
-  namespace: student23-bookinfo-dev
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.productpage.namespace }}
   labels:
-    app: bookinfo-dev-productpage
+    app: {{ .Release.Name }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.productpage.replicas }}
   selector:
     matchLabels:
-      app: bookinfo-dev-productpage
+      app: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: bookinfo-dev-productpage
+        app: {{ .Release.Name }}
     spec:
       containers:
-      - name: bookinfo-dev-productpage
-        image: ghcr.io/sueshi-lab/bookinfo-productpage:dev
+      - name: {{ .Release.Name }}
+        image: {{ .Values.productpage.image }}:{{ .Values.productpage.tag }}
         imagePullPolicy: Always
+
+        {{- if or (.Values.extraEnv) (.Values.extraEnvSecret) }}
         env:
-        - name: RATINGS_HOSTNAME
-          value: "http://sitkmutt.bookinfo.dev.opsta.net/student23/ratings"
-        - name: DETAILS_HOSTNAME
-          value: "http://sitkmutt.bookinfo.dev.opsta.net/student23/details"
-        - name: REVIEWS_HOSTNAME
-          value: "http://sitkmutt.bookinfo.dev.opsta.net/student23/reviews"
-        - name: FLOOD_FACTOR
-          value: "0"
+
+        {{- if .Values.extraEnv }}
+        {{- range $key, $value := .Values.extraEnv }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+
+        {{- if .Values.extraEnvSecret }}
+        {{- range $key, $value := .Values.extraEnvSecret }}
+        {{- range $secretName, $secretValue := $value }}
+        - name: {{ $key }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $secretName }}
+              key: {{ $secretValue | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+
+        {{- end }}
       imagePullSecrets:
-      - name: registry-bookinfo
+      - name: {{ .Values.productpage.imagePullSecrets }}
